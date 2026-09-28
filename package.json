@@ -56,6 +56,7 @@
   ],
   "scripts": {
     "check": "node scripts/check-release.mjs",
+    "release": "node scripts/release.mjs",
     "fill-identity": "node scripts/fill-identity.mjs",
     "prepublishOnly": "node scripts/check-release.mjs"
   },

@@ -17,7 +17,7 @@ DSH 的工作区指令文件由 `@deepseek-ai/dsh-agent-instructions` 投递。�
 
 ## 它做什么
 
-本插件改为在**步边界**拦截。开关关闭时，指令消息会从即将进入模型上下文的批次里被移除，同时指令插件停在 agent 收件箱里的待投递条目会被清掉，避免每一步都重新发现并读取文件。
+本插件改为在**步边界**拦截。开关打开时，指令消息会从即将进入模型上下文的批次里被移除，同时指令插件停在 agent 收件箱里的待投递条目会被清掉，避免每一步都重新发现并读取文件。
 
 | 性质 | 表现 |
 | --- | --- |
@@ -25,9 +25,9 @@ DSH 的工作区指令文件由 `@deepseek-ai/dsh-agent-instructions` 投递。�
 | 立即生效 | 从**当前会话的下一步**起生效，不需要重启，也不需要新开会话。 |
 | 不破坏数据 | 不重写磁盘上的会话历史，也不删除你仓库里的任何文件。 |
 | 与挂载顺序无关 | 监听器以 `{ prepend: true }` 注册，始终位于瀑布最外层，不受插件挂载顺序或热重载重注册影响。 |
-| 默认开启 | 只有显式的 `false` 才拦截，因此缺失值或 schema 变化绝不会意外改变既有行为。 |
+| 默认关闭 | 开关默认关闭，注入保持开启；只有配置里出现显式的 `false`（即把开关打开）才拦截，因此缺失值或 schema 变化绝不会意外改变既有行为。 |
 
-它**不是**：它不阻止指令插件继续发现并读取文件，也无法压制别的插件用自己的 source kind 注入的类似内容。「关闭」的含义是**不注入上下文**，不是**不读取**。
+它**不是**：它不阻止指令插件继续发现并读取文件，也无法压制别的插件用自己的 source kind 注入的类似内容。开关打开后的含义是**不注入上下文**，不是**不读取**。
 
 ## 安装
 
@@ -47,7 +47,7 @@ dsh plugin add dsh-agents-md-switch
 
 两个界面入口，它们是同一个设置：
 
-- **设置 → 通用** —— 一行「注入工作区指令文件」。这一行本身就是开关，点一下即可。
+- **设置 → 通用** —— 一行「关闭 AGENTS.md 注入」。这一行本身就是开关，点一下即可。
 - **设置 → 插件 → dsh-agents-md-switch → 行 → 配置** —— 本 bundle 自己的配置页；卡片上还有一行状态摘要。
 
 写入由 DSH 的 config editor 持久化到你 profile 的 `cordis.patch.yml`，表现为 `inject-agents-md` 的 override 行，因此重启后依然有效，并对该 profile 下的所有会话生效。
@@ -81,15 +81,34 @@ DSH_AGENTS_MD_SWITCH_DEBUG=1 ... # 打开宿主侧 stderr 调试日志（默认�
 
 ## 发布
 
-仓库里带的是身份**占位符**，由发布者决定注册表与许可证上记录什么：
+npm 不允许重复发布同一版本号，所以每次发版都要升版本。一条命令完成「预检 → 升 `package.json` → 发布」：
 
 ```bash
-npm run fill-identity -- --owner <github 账号> --name "<作者名>" --email "<邮箱>"
-npm run check          # prepublishOnly 也会自动跑
-npm publish --access public
+npm run release -- patch        # patch | minor | major | 或精确的 x.y.z
+npm run release -- patch --dry-run   # 预演：只跑预检，不改动任何东西
+git add -A && git commit -m "release: vX.Y.Z" && git tag vX.Y.Z && git push --follow-tags
 ```
 
-`.github/workflows/publish.yml` 通过 npm trusted publishing（OIDC，无长期 token）在 GitHub Release 时发布。全新包仍需先手动 `npm publish` 一次，因为 trusted publisher 只能挂到已存在的包上——详见该 workflow 里的注释。
+发布前先把 `CHANGELOG.md` 定稿——`npm run release` 不会碰它，而它会随包一起发布，所以顶部仍写着 `Unreleased` 的段落会原样出现在 npm 包页上：
+
+1. 把 `## [Unreleased]` 改名为 `## [x.y.z]`，并补上发布日期。
+2. 把引用链接指向新 tag（`…/compare/v1.0.0...v1.1.0`）；若想继续累积，再加一行新的 `[Unreleased]: …/compare/v1.1.0...HEAD`。
+3. 用能产出同一版本号的 bump 执行 `npm run release`——从 `1.0.0` 起，`minor` 得到 `1.1.0`。
+
+`npm run release` **刻意不碰 git**：它用 `--no-git-tag-version` 只改 `package.json`，然后把 commit、tag、push 命令打印出来，由你自己执行。
+
+如果账号的第二因子是安全密钥，CLI 无法应答 npm 的 OTP 挑战，发布就需要一枚**勾了 “bypass 2FA” 的 granular access token**（npmjs.com → Access Tokens → Generate New Token → Granular Access Token → *Read and write* → *Allow this token to bypass 2FA*）：
+
+```bash
+export NPM_TOKEN=npm_...        # PowerShell：$env:NPM_TOKEN = 'npm_...'
+npm run release -- patch
+```
+
+令牌只从环境变量读取，**绝不写入** `package.json`、`.npmrc` 或本仓库；用完请到网页撤销。
+
+`.github/workflows/publish.yml` 通过 npm trusted publishing（OIDC，无长期令牌）在 GitHub Release 时发布。trusted publisher 只需配置一次——包 → Settings → Trusted publishing → GitHub Actions → 本仓库，workflow 填 `publish.yml`，environment 留空——之后发版**既不需要令牌也不需要第二因子**。全新包仍需先用令牌手动发布一次，因为 trusted publisher 只能挂到已存在的包上；详见该 workflow 里的注释。
+
+身份字段曾是占位符，在首次发布前用 `npm run fill-identity` 填过一次。
 
 ## 许可证
 

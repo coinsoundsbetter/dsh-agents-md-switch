@@ -23,7 +23,7 @@ while you are working.
 
 ## What it does
 
-This plugin intercepts at the step boundary instead. While the switch is off, the
+This plugin intercepts at the step boundary instead. While the switch is on, the
 instruction messages are removed from the batch that is about to enter the model
 context, and the entries the instruction plugin parked in the agent's inbox are cleared
 so the files are not re-read on every step.
@@ -34,11 +34,11 @@ so the files are not re-read on every step.
 | Live | Takes effect from the **next step of the current session**. No restart, no new session needed. |
 | Non-destructive | Session history on disk is never rewritten, and nothing is deleted from your repository. |
 | Order independent | The listener registers with `{ prepend: true }`, so it stays outermost in the waterfall regardless of plugin mount order or hot-reload re-registration. |
-| Default on | Only an explicit `false` intercepts, so a missing value or a schema change can never alter existing behaviour by accident. |
+| Default off | The switch starts off, so injection stays on until you ask for it to stop. Only an explicit `false` in the config — which is what turning the switch on writes — intercepts, so a missing value or a schema change can never alter existing behaviour by accident. |
 
 What it is **not**: it does not stop the instruction plugin from discovering and reading
 the files, and it cannot suppress instruction-like content injected by some other plugin
-under its own source kind. Off means "not injected into the context", not "not read".
+under its own source kind. Suppressing means "not injected into the context", not "not read".
 
 ## Install
 
@@ -63,7 +63,7 @@ Requires DSH `0.1.7-rc.2` or newer, and Node `^22.19.0 || >=24.0.0`.
 
 There are two entry points, and they are the same setting:
 
-- **Settings → General** — a row titled *Inject workspace instructions*. This one is the
+- **Settings → General** — a row titled *Disable AGENTS.md injection*. This one is the
   switch: click it and you are done.
 - **Settings → Plugins → dsh-agents-md-switch → the row → Configure** — the bundle's own
   configuration page, which also shows a one-line summary on the card.
@@ -134,19 +134,51 @@ DSH_AGENTS_MD_SWITCH_DEBUG=1 ... # opt-in host-side tracing on stderr
 
 ## Publishing
 
-The repository ships with identity **placeholders**, so that whoever publishes decides
-what the registry and the licence record:
+Every release needs a new version, because npm refuses to publish a version that already
+exists. One command does the preflight, bumps `package.json`, and publishes:
 
 ```bash
-npm run fill-identity -- --owner <github-owner> --name "<author name>" --email "<email>"
-npm run check          # also runs automatically on prepublishOnly
-npm publish --access public
+npm run release -- patch        # patch | minor | major | an exact x.y.z
+npm run release -- patch --dry-run   # rehearse: preflight only, change nothing
+git add -A && git commit -m "release: vX.Y.Z" && git tag vX.Y.Z && git push --follow-tags
 ```
 
-`.github/workflows/publish.yml` publishes on a GitHub release using npm trusted
-publishing (OIDC, no long-lived token). A brand-new package still needs one manual
-`npm publish` first, because a trusted publisher can only be attached to a package that
-already exists — see the comments in that workflow.
+Finalize `CHANGELOG.md` **before** you publish — `npm run release` does not touch it, and
+the file ships inside the tarball, so a section still headed `Unreleased` would appear that
+way on the package page:
+
+1. Rename `## [Unreleased]` to `## [x.y.z]` and add the release date.
+2. Retarget the reference link to the new tag (`…/compare/v1.0.0...v1.1.0`), and add a fresh
+   `[Unreleased]: …/compare/v1.1.0...HEAD` if you want to keep collecting changes.
+3. Run `npm run release` with the bump that yields that same version — from `1.0.0`, `minor`
+   gives `1.1.0`.
+
+`npm run release` deliberately does not run git: it bumps `package.json` with
+`--no-git-tag-version`, and prints the commit, tag and push commands for you to run.
+
+On an account whose second factor is a security key, the CLI cannot answer npm's OTP
+challenge, so publishing needs a **granular access token with “bypass 2FA” enabled**
+(npmjs.com → Access Tokens → Generate New Token → Granular Access Token → *Read and
+write* → *Allow this token to bypass 2FA*):
+
+```bash
+export NPM_TOKEN=npm_...        # PowerShell: $env:NPM_TOKEN = 'npm_...'
+npm run release -- patch
+```
+
+The token is read from the environment only — never written to `package.json`, `.npmrc`,
+or this repository. Revoke it when you no longer need it.
+
+`.github/workflows/publish.yml` publishes on a GitHub release through npm trusted
+publishing (OIDC, no long-lived token). Configure the trusted publisher once — package →
+Settings → Trusted publishing → GitHub Actions → this repository, workflow `publish.yml`,
+environment blank — and afterwards releases need neither a token nor a second factor. A
+brand-new package still needs one token-based `npm publish` first, because a trusted
+publisher can only be attached to a package that already exists. See the comments in that
+workflow.
+
+The identity fields used to be placeholders and are filled once, before the first
+publish, with `npm run fill-identity`.
 
 ## License
 

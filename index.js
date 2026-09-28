@@ -202,13 +202,17 @@ export const name = 'inject-agents-md';
  * `volatile` is required — see the module doc. The description is bilingual on
  * purpose: the settings form renders the schema description verbatim, so it cannot
  * follow the interface language, and this plugin is published for a global audience.
+ *
+ * The field is the **positive** form of the setting: `true` injects. The client half
+ * presents the same setting as an inverse switch ("disable AGENTS.md injection"), so
+ * both of its write sites store `!next`. Nothing in this half depends on that.
  */
 export const Config = Schema.object({
   [FIELD]: Schema.boolean()
     .default(true)
     .description(
-      'Inject workspace instruction files (AGENTS.md / CLAUDE.md and their .local.md variants) into the model context. '
-      + '｜ 是否把工作区指令文件（AGENTS.md / CLAUDE.md 及其 .local.md 变体）注入模型上下文。',
+      'Whether workspace instruction files (AGENTS.md / CLAUDE.md and their .local.md variants) enter the model context; this is the positive field, so the settings switch stores its inverse. '
+      + '｜ 工作区指令文件（AGENTS.md / CLAUDE.md 及其 .local.md 变体）是否进入模型上下文；本字段是正极性，设置里的开关写入的是它的相反值。',
     )
     .volatile(),
 });
