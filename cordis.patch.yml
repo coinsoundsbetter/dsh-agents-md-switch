@@ -1,0 +1,19 @@
+# Global switch for one question: should the workspace instruction files
+# (AGENTS.md / CLAUDE.md and their .local.md variants) be injected into the model
+# context?
+#
+# This bundle inserts one host plugin row. It listens on the `agent/pre-step`
+# waterfall and, while the switch is off, removes the instruction-file messages that
+# `dsh-agent-instructions` injected for that step. Because the interception happens at
+# the step boundary rather than inside one preset, it applies to standard / ptc /
+# cordis and to any custom preset alike.
+#
+# The settings control comes from `Config` in index.js: `injectAgentsMd` is marked
+# volatile, which is what makes the host project a configuration form for the row
+# (`dsh-settings`'s `volatileForm` only projects volatile fields) and apply a write in
+# place, with no restart.
+- insert:
+    - id: inject-agents-md
+      name: dsh-agents-md-switch
+      config:
+        injectAgentsMd: true

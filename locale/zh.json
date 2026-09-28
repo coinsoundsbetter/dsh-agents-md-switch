@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "AGENTS.md 注入开关",
+    "description": "在设置里对所有 agent 预设统一开关工作区指令注入，立即生效，无需重启。"
+  }
+}

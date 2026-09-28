@@ -1,0 +1,93 @@
+{
+  "name": "dsh-agents-md-switch",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Global on/off switch for injecting workspace instruction files (AGENTS.md / CLAUDE.md) into the model context · 全局开关：是否把工作区指令文件注入模型上下文",
+  "license": "MIT",
+  "author": {
+    "name": "coinsoundsbetter",
+    "email": "linjiaxingood@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coinsoundsbetter/dsh-agents-md-switch.git"
+  },
+  "homepage": "https://github.com/coinsoundsbetter/dsh-agents-md-switch#readme",
+  "bugs": {
+    "url": "https://github.com/coinsoundsbetter/dsh-agents-md-switch/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "plugin",
+    "agents-md",
+    "claude-md",
+    "instructions",
+    "settings",
+    "toggle"
+  ],
+  "meta": {
+    "title": "AGENTS.md injection switch · AGENTS.md 注入开关",
+    "description": "Turn workspace instruction injection on or off for every agent preset, live, from Settings. · 在设置里对所有 agent 预设统一开关工作区指令注入，立即生效。"
+  },
+  "main": "index.js",
+  "icon": "./icon.svg",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.zh.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node scripts/check-release.mjs",
+    "fill-identity": "node scripts/fill-identity.mjs",
+    "prepublishOnly": "node scripts/check-release.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ]
+    },
+    "compatibility": {
+      "dshReleases": {
+        "0.1.7-rc.2": "compatible"
+      }
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/schemastery": "^3.18.2",
+    "@deepseek-ai/dsh-settings": ">=0.1.7-rc.2"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-settings": {
+      "optional": true
+    }
+  }
+}

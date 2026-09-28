@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="AGENTS.md injection switch">
+  <title>AGENTS.md injection switch</title>
+  <!-- Explicit colours on purpose: the host renders this file as an image, so
+       `currentColor` would resolve to black and disappear on a dark theme. -->
+  <rect x="6" y="22" width="52" height="26" rx="13" fill="#4C8DF6" opacity="0.18"/>
+  <rect x="6" y="22" width="52" height="26" rx="13" fill="none" stroke="#4C8DF6" stroke-width="4"/>
+  <path d="M15 35h13" stroke="#4C8DF6" stroke-width="4" stroke-linecap="round" opacity="0.45"/>
+  <circle cx="44" cy="35" r="8" fill="#4C8DF6"/>
+</svg>

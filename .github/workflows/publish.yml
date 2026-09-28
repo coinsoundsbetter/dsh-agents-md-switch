@@ -1,0 +1,47 @@
+name: publish
+
+# Publishing runs on a GitHub release, or manually from the Actions tab.
+#
+# Two supported setups, pick ONE:
+#
+#   A) npm trusted publishing (OIDC) — no long-lived token. Configure the trusted
+#      publisher on npmjs.com for this package: repository `coinsoundsbetter/dsh-agents-md-switch`,
+#      workflow file `publish.yml`, environment left blank. The `id-token: write`
+#      permission below is what lets npm verify the workflow identity.
+#      Note: the first release of a brand-new package still has to be published
+#      manually once (`npm login && npm publish`), because a trusted publisher can
+#      only be attached to a package that already exists.
+#
+#   B) A classic automation token — set the `NPM_TOKEN` repository secret and pass
+#      it through `NODE_AUTH_TOKEN` (the commented `env:` block below).
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs a recent npm (OIDC support landed in npm 11.5).
+      - name: Use the latest npm
+        run: npm install --global npm@latest
+
+      - name: Preflight
+        run: node scripts/check-release.mjs
+
+      - name: Publish
+        run: npm publish --provenance --access public
+        # env:
+        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
